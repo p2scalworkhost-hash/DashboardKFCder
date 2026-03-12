@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KFCDer Data Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #E4002B;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+        }
+
+        * { box-sizing: border-box; font-family: 'Kanit', sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 40px 20px; }
+        
+        .dashboard-container { max-width: 1400px; margin: 0 auto; }
+        
+        /* ส่วนอัปโหลดไฟล์ */
+        .upload-section {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-bottom: 40px;
+            border: 2px dashed var(--primary-color);
+        }
+        .upload-section h2 { color: var(--primary-color); margin-bottom: 15px; font-size: 2rem; }
+        .upload-section p { color: var(--text-muted); margin-bottom: 25px; font-size: 1.1rem; }
+        .file-input-wrapper { display: inline-block; position: relative; }
+        .file-input-wrapper input[type="file"] {
+            font-size: 1.1rem; padding: 10px; cursor: pointer;
+        }
+
+        /* เลย์เอาต์ Dashboard (ซ่อนไว้ก่อนอัปโหลด) */
+        #dashboardContent { display: none; }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { color: var(--primary-color); font-size: 2.8rem; margin-bottom: 5px; }
+        .header p { color: var(--text-muted); font-size: 1.2rem; }
+        
+        .summary-cards { display: flex; gap: 20px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
+        .card {
+            background: var(--card-bg); padding: 25px 30px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; min-width: 250px;
+            border-top: 5px solid var(--primary-color); flex: 1; max-width: 300px;
+        }
+        .card h3 { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 10px; }
+        .card .number { font-size: 2.5rem; font-weight: 600; color: var(--text-main); }
+        
+        .section-title {
+            font-size: 1.8rem; font-weight: 600; color: var(--primary-color);
+            margin: 40px 0 20px; padding-bottom: 10px; border-bottom: 2px solid #e0e6ed;
+        }
+
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
+        .chart-card {
+            background: var(--card-bg); padding: 25px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column;
+        }
+        .chart-card h3 { text-align: center; margin-bottom: 20px; font-size: 1.1rem; font-weight: 500; height: 50px; }
+        .canvas-container { position: relative; height: 280px; width: 100%; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <div class="upload-section" id="uploadSection">
+            <h2>📊 นำเข้าข้อมูล CSV</h2>
+            <p>กรุณาเลือกไฟล์ .csv ที่ Export มาจาก Google Sheets เพื่อแสดงผล Dashboard</p>
+            <div class="file-input-wrapper">
+                <input type="file" id="csvFileInput" accept=".csv" />
+            </div>
+        </div>
+
+        <div id="dashboardContent">
+            <div class="header">
+                <h1>🍗 KFCDer Insight Dashboard</h1>
+                <p>สรุปผลข้อมูลพฤติกรรมผู้บริโภคแบบเจาะลึกทุกคำถาม</p>
+            </div>
+
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>ผู้ตอบแบบสอบถามทั้งหมด</h3>
+                    <div class="number" id="totalCount">0</div>
+                </div>
+                <div class="card">
+                    <h3>เมนูยอดฮิต</h3>
+                    <div class="number" id="topMenu" style="color: #E4002B;">-</div>
+                </div>
+                <div class="card">
+                    <h3>เพื่อนร่วมโต๊ะยอดฮิต</h3>
+                    <div class="number" id="topCompanion" style="color: #2ecc71;">-</div>
+                </div>
+            </div>
+
+            <div class="section-title">👤 ข้อมูลส่วนตัว</div>
+            <div class="charts-grid">
+                <div class="chart-card"><h3>1. อายุของคุณ</h3><div class="canvas-container"><canvas id="ageChart"></canvas></div></div>
+                <div class="chart-card"><h3>2. สถานะปัจจุบัน</h3><div class="canvas-container"><canvas id="statusChart"></canvas></div></div>
+            </div>
+
+            <div class="section-title">🎯 Insight Question (ฟีเจอร์แอป)</div>
+            <div class="charts-grid">
+                <div class="chart-card"><h3>1. ปกติเลือกเมนูจากอะไรเป็นหลัก</h3><div class="canvas-container"><canvas id="iq1Chart"></canvas></div></div>
+                <div class="chart-card"><h3>2. เมนูที่ชอบที่สุด</h3><div class="canvas-container"><canvas id="iq2Chart"></canvas></div></div>
+                <div class="chart-card"><h3>3. เคยรู้สึกว่าเลือกเมนูยากหรือไม่</h3><div class="canvas-container"><canvas id="iq3Chart"></canvas></div></div>
+                <div class="chart-card"><h3>4. ฟีเจอร์ "จับคู่เมนู" ช่วยให้ง่ายขึ้นไหม</h3><div class="canvas-container"><canvas id="iq4Chart"></canvas></div></div>
+                <div class="chart-card"><h3>5. ไอเดีย Matching สร้าง Bucket น่าสนใจแค่ไหน</h3><div class="canvas-container"><canvas id="iq5Chart"></canvas></div></div>
+                <div class="chart-card"><h3>6. ปัดเลือกเมนูทำให้สั่งสนุกขึ้นไหม</h3><div class="canvas-container"><canvas id="iq6Chart"></canvas></div></div>
+                <div class="chart-card"><h3>7. ถ้ามีฟีเจอร์นี้ จะลองใช้หรือไม่</h3><div class="canvas-container"><canvas id="iq7Chart"></canvas></div></div>
+            </div>
+
+            <div class="section-title">🍗 พฤติกรรมผู้บริโภค</div>
+            <div class="charts-grid">
+                <div class="chart-card"><h3>1. มักไปทาน KFC กับใครบ่อยที่สุด</h3><div class="canvas-container"><canvas id="whoChart"></canvas></div></div>
+                <div class="chart-card"><h3>2. คอนเทนต์ที่ทำให้อยากซื้อ</h3><div class="canvas-container"><canvas id="contentChart"></canvas></div></div>
+                <div class="chart-card"><h3>3. ทาน KFC บ่อยแค่ไหน</h3><div class="canvas-container"><canvas id="cb1Chart"></canvas></div></div>
+                <div class="chart-card"><h3>4. เคยใช้แอป KFC หรือไม่</h3><div class="canvas-container"><canvas id="cb2Chart"></canvas></div></div>
+                <div class="chart-card"><h3>5. ชอบเลือกเมนูเองหรือสั่งตามเซต</h3><div class="canvas-container"><canvas id="cb3Chart"></canvas></div></div>
+                <div class="chart-card"><h3>6. สนใจใช้ฟีเจอร์ช่วยแนะนำเมนูไหม</h3><div class="canvas-container"><canvas id="cb4Chart"></canvas></div></div>
+                <div class="chart-card"><h3>7. มักเพิ่มของทานเล่นหรือไม่</h3><div class="canvas-container"><canvas id="cb5Chart"></canvas></div></div>
+                <div class="chart-card"><h3>8. ชอบเมนูที่เลือกส่วนประกอบเองได้ไหม</h3><div class="canvas-container"><canvas id="cb6Chart"></canvas></div></div>
+                <div class="chart-card"><h3>9. ปกติทำอาหารทานเองบ่อยแค่ไหน</h3><div class="canvas-container"><canvas id="cb9Chart"></canvas></div></div>
+                <div class="chart-card"><h3>10. ยินดีรอคิวร้านที่อยากกินหรือไม่</h3><div class="canvas-container"><canvas id="cb10Chart"></canvas></div></div>
+                <div class="chart-card"><h3>11. ความคิดเห็นเกี่ยวกับ Fast Food</h3><div class="canvas-container"><canvas id="cb11Chart"></canvas></div></div>
+                <div class="chart-card"><h3>12. ทานไก่กี่ชิ้นถึงอิ่ม?</h3><div class="canvas-container"><canvas id="cb12Chart"></canvas></div></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let chartInstances = []; // เก็บกราฟที่วาดไว้ เพื่อเคลียร์ทิ้งตอนอัปโหลดไฟล์ใหม่
+
+        // Event เมื่อมีการเลือกไฟล์ CSV
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // ใช้ PapaParse อ่านไฟล์
+            Papa.parse(file, {
+                header: false, // ใช้อ่านตามลำดับคอลัมน์ (Index)
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const data = results.data;
+                    if (data.length <= 1) {
+                        alert('ไฟล์ CSV ไม่มีข้อมูล หรือมีแค่หัวข้อครับ');
+                        return;
+                    }
+                    
+                    // ตัดแถวแรก (Headers) ทิ้ง เอาแต่ข้อมูล
+                    const rows = data.slice(1);
+                    renderDashboard(rows);
+                    
+                    // ซ่อนกล่องอัปโหลด แสดง Dashboard
+                    document.getElementById('uploadSection').style.display = 'none';
+                    document.getElementById('dashboardContent').style.display = 'block';
+                }
+            });
+        });
+
+        // ฟังก์ชันช่วยนับจำนวนข้อมูลจากลำดับคอลัมน์ (Index)
+        function getCountsByIndex(rows, columnIndex) {
+            return rows.reduce((acc, curr) => {
+                let val = curr[columnIndex];
+                if (val && val.trim() !== "") {
+                    acc[val] = (acc[val] || 0) + 1;
+                }
+                return acc;
+            }, {});
+        }
+
+        // โทนสีหลัก
+        const baseColors = ['#E4002B', '#ff416c', '#2c3e50', '#f39c12', '#7f8c8d', '#3498db'];
+
+        // Helper สร้างกราฟ
+        function createChart(canvasId, type, countsObj, colorPalette = baseColors, isHorizontal = false) {
+            const ctx = document.getElementById(canvasId);
+            let options = { maintainAspectRatio: false };
+            
+            if(type === 'bar') {
+                options.plugins = { legend: { display: false } };
+                if(isHorizontal) options.indexAxis = 'y';
+            }
+
+            const chart = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: Object.keys(countsObj),
+                    datasets: [{ 
+                        label: 'จำนวน (คน)', 
+                        data: Object.values(countsObj), 
+                        backgroundColor: colorPalette,
+                        borderRadius: type === 'bar' ? 6 : 0
+                    }]
+                },
+                options: options
+            });
+            
+            chartInstances.push(chart); // เก็บตัวแปรไว้
+            return chart;
+        }
+
+        // ฟังก์ชันหลัก: เรนเดอร์ Dashboard เมื่อได้ข้อมูล
+        function renderDashboard(rows) {
+            // ลบกราฟเก่าทิ้งก่อน (ถ้ามีการอัปโหลดซ้ำ)
+            chartInstances.forEach(chart => chart.destroy());
+            chartInstances = [];
+
+            // 1. อัปเดต Scorecards
+            document.getElementById('totalCount').innerText = rows.length;
+            
+            const menuCounts = getCountsByIndex(rows, 4); // คอลัมน์ที่ 5 (iq2)
+            if(Object.keys(menuCounts).length > 0) {
+                document.getElementById('topMenu').innerText = Object.keys(menuCounts).reduce((a, b) => menuCounts[a] > menuCounts[b] ? a : b) + ' 🍗';
+            }
+
+            const whoCounts = getCountsByIndex(rows, 10); // คอลัมน์ที่ 11 (cb_who)
+            if(Object.keys(whoCounts).length > 0) {
+                document.getElementById('topCompanion').innerText = Object.keys(whoCounts).reduce((a, b) => whoCounts[a] > whoCounts[b] ? a : b);
+            }
+
+            // ==========================================
+            // วาดกราฟทั้งหมด (อ้างอิงลำดับ Index ตามตาราง CSV ของคุณ)
+            // ==========================================
+            
+            // 1. ข้อมูลส่วนตัว
+            createChart('ageChart', 'pie', getCountsByIndex(rows, 1));     // age
+            createChart('statusChart', 'doughnut', getCountsByIndex(rows, 2)); // status
+
+            // 2. Insight Question
+            createChart('iq1Chart', 'bar', getCountsByIndex(rows, 3), ['#E4002B']);
+            createChart('iq2Chart', 'bar', getCountsByIndex(rows, 4), ['#f39c12'], true); 
+            createChart('iq3Chart', 'pie', getCountsByIndex(rows, 5));
+            createChart('iq4Chart', 'doughnut', getCountsByIndex(rows, 6));
+            createChart('iq5Chart', 'bar', getCountsByIndex(rows, 7), ['#ff416c']);
+            createChart('iq6Chart', 'pie', getCountsByIndex(rows, 8));
+            createChart('iq7Chart', 'bar', getCountsByIndex(rows, 9), ['#2c3e50']);
+
+            // 3. พฤติกรรมผู้บริโภค
+            
+            // ** ไฮไลต์พิเศษ: สี แฟน vs แฟนเก่า **
+            const whoDataCounts = getCountsByIndex(rows, 10);
+            const whoLabels = Object.keys(whoDataCounts);
+            const whoColors = whoLabels.map(label => {
+                if (label.includes('แฟนเก่า')) return '#7f8c8d'; // สีเทาหม่น
+                if (label.includes('แฟน')) return '#E4002B';     // สีแดงสด
+                if (label.includes('เพื่อน')) return '#f39c12';
+                if (label.includes('ครอบครัว')) return '#3498db';
+                if (label.includes('คนเดียว')) return '#2c3e50';
+                return '#cccccc';
+            });
+
+            const whoCtx = document.getElementById('whoChart');
+            const whoChart = new Chart(whoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: whoLabels,
+                    datasets: [{ data: Object.values(whoDataCounts), backgroundColor: whoColors }]
+                },
+                options: { maintainAspectRatio: false, cutout: '50%' }
+            });
+            chartInstances.push(whoChart);
+
+            createChart('contentChart', 'bar', getCountsByIndex(rows, 11), ['#E4002B'], true);
+            createChart('cb1Chart', 'pie', getCountsByIndex(rows, 12));
+            createChart('cb2Chart', 'doughnut', getCountsByIndex(rows, 13), ['#E4002B', '#7f8c8d']);
+            createChart('cb3Chart', 'pie', getCountsByIndex(rows, 14));
+            createChart('cb4Chart', 'bar', getCountsByIndex(rows, 15), ['#2ecc71', '#f39c12', '#e74c3c']);
+            createChart('cb5Chart', 'pie', getCountsByIndex(rows, 16));
+            createChart('cb6Chart', 'doughnut', getCountsByIndex(rows, 17));
+            createChart('cb9Chart', 'bar', getCountsByIndex(rows, 18), ['#E4002B'], true);
+            createChart('cb10Chart', 'bar', getCountsByIndex(rows, 19), ['#2c3e50'], true);
+            createChart('cb11Chart', 'bar', getCountsByIndex(rows, 20), ['#ff416c'], true);
+            createChart('cb12Chart', 'bar', getCountsByIndex(rows, 21), ['#f39c12']);
+        }
+    </script>
+</body>
+</html>
