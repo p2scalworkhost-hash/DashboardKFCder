@@ -1,290 +1,1087 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KFCDer Data Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
-    <style>
-        :root {
-            --primary-color: #E4002B;
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-main: #2c3e50;
-            --text-muted: #7f8c8d;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KFC Survey Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E4002B;
+    --red-dark: #9B0000;
+    --red-glow: rgba(228,0,43,0.3);
+    --cream: #FFF8F0;
+    --warm: #FFE8D0;
+    --charcoal: #1A1208;
+    --graphite: #2C2218;
+    --muted: #7A6A58;
+    --gold: #F5A623;
+    --gold-light: #FFD580;
+    --white: #FFFFFF;
+    --grid: rgba(228,0,43,0.06);
+  }
 
-        * { box-sizing: border-box; font-family: 'Kanit', sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--bg-color); color: var(--text-main); padding: 40px 20px; }
-        
-        .dashboard-container { max-width: 1400px; margin: 0 auto; }
-        
-        /* ส่วนอัปโหลดไฟล์ */
-        .upload-section {
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            margin-bottom: 40px;
-            border: 2px dashed var(--primary-color);
-        }
-        .upload-section h2 { color: var(--primary-color); margin-bottom: 15px; font-size: 2rem; }
-        .upload-section p { color: var(--text-muted); margin-bottom: 25px; font-size: 1.1rem; }
-        .file-input-wrapper { display: inline-block; position: relative; }
-        .file-input-wrapper input[type="file"] {
-            font-size: 1.1rem; padding: 10px; cursor: pointer;
-        }
+  * { margin:0; padding:0; box-sizing:border-box; }
 
-        /* เลย์เอาต์ Dashboard (ซ่อนไว้ก่อนอัปโหลด) */
-        #dashboardContent { display: none; }
-        
-        .header { text-align: center; margin-bottom: 40px; }
-        .header h1 { color: var(--primary-color); font-size: 2.8rem; margin-bottom: 5px; }
-        .header p { color: var(--text-muted); font-size: 1.2rem; }
-        
-        .summary-cards { display: flex; gap: 20px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
-        .card {
-            background: var(--card-bg); padding: 25px 30px; border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; min-width: 250px;
-            border-top: 5px solid var(--primary-color); flex: 1; max-width: 300px;
-        }
-        .card h3 { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 10px; }
-        .card .number { font-size: 2.5rem; font-weight: 600; color: var(--text-main); }
-        
-        .section-title {
-            font-size: 1.8rem; font-weight: 600; color: var(--primary-color);
-            margin: 40px 0 20px; padding-bottom: 10px; border-bottom: 2px solid #e0e6ed;
-        }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--charcoal);
+    color: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
-        .chart-card {
-            background: var(--card-bg); padding: 25px; border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column;
-        }
-        .chart-card h3 { text-align: center; margin-bottom: 20px; font-size: 1.1rem; font-weight: 500; height: 50px; }
-        .canvas-container { position: relative; height: 280px; width: 100%; margin-top: auto; }
-    </style>
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px 64px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid rgba(228,0,43,0.25);
+    margin-bottom: 48px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .brand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--red);
+    padding: 6px 16px 6px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .brand-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.6; transform:scale(1.3); }
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    color: var(--white);
+  }
+
+  h1 span {
+    color: var(--red);
+    display: block;
+  }
+
+  .header-meta {
+    text-align: right;
+  }
+
+  .meta-stat {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 2;
+  }
+
+  .meta-stat strong {
+    font-size: 28px;
+    font-family: 'Bebas Neue', sans-serif;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    display: block;
+    line-height: 1;
+  }
+
+  /* ── KPI STRIP ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    margin-bottom: 48px;
+  }
+
+  .kpi {
+    background: var(--graphite);
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s;
+  }
+
+  .kpi:first-child { border-radius: 16px 0 0 16px; }
+  .kpi:last-child { border-radius: 0 16px 16px 0; }
+
+  .kpi:hover { transform: translateY(-4px); z-index: 2; }
+
+  .kpi::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .kpi:hover::after { transform: scaleX(1); }
+
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .kpi-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--white);
+    letter-spacing: 0.02em;
+  }
+
+  .kpi-value span {
+    font-size: 24px;
+    color: var(--gold);
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .kpi-icon {
+    position: absolute;
+    top: 20px; right: 20px;
+    font-size: 32px;
+    opacity: 0.12;
+  }
+
+  /* ── GRID LAYOUT ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--graphite);
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .card-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 14px; height: 2px;
+    background: var(--red);
+    display: inline-block;
+  }
+
+  /* ── BAR CHART ── */
+  .bar-group { margin-bottom: 14px; }
+
+  .bar-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--cream);
+  }
+
+  .bar-pct {
+    font-family: 'DM Mono', monospace;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  .bar-track {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--red);
+    animation: growX 1s ease both;
+    position: relative;
+  }
+
+  .bar-fill.gold { background: var(--gold); }
+  .bar-fill.muted { background: var(--muted); }
+  .bar-fill.gradient { background: linear-gradient(90deg, var(--red), var(--gold)); }
+
+  @keyframes growX {
+    from { transform: scaleX(0); transform-origin: left; }
+    to   { transform: scaleX(1); transform-origin: left; }
+  }
+
+  /* ── DONUT ── */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .donut-svg { flex-shrink: 0; }
+
+  .donut-legend { flex: 1; }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--cream);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-pct {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── GAUGE ── */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .gauge-label-top {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .gauge-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  .gauge-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── HEAT BADGES ── */
+  .badge-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .badge {
+    padding: 8px 14px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge-hot { background: rgba(228,0,43,0.18); color: #FF6B6B; border: 1px solid rgba(228,0,43,0.3); }
+  .badge-warm { background: rgba(245,166,35,0.15); color: var(--gold); border: 1px solid rgba(245,166,35,0.3); }
+  .badge-cool { background: rgba(122,106,88,0.2); color: var(--muted); border: 1px solid rgba(122,106,88,0.2); }
+
+  .badge-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* ── HIGHLIGHT CARD ── */
+  .highlight-card {
+    background: linear-gradient(135deg, var(--red-dark), var(--red));
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .highlight-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .highlight-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    line-height: 1;
+    color: var(--white);
+  }
+
+  .highlight-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  /* ── TABLE-STYLE RANKING ── */
+  .rank-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .rank-row:last-child { border-bottom: none; }
+
+  .rank-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--muted);
+    width: 24px;
+    text-align: center;
+  }
+
+  .rank-num.top { color: var(--gold); }
+
+  .rank-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--cream);
+  }
+
+  .rank-bar-mini {
+    width: 100px;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .rank-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--red);
+    animation: growX 1s ease both;
+  }
+
+  .rank-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 36px;
+    text-align: right;
+  }
+
+  /* ── SECTION DIVIDER ── */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 40px 0 20px;
+  }
+
+  .section-head h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+  }
+
+  /* ── SCATTER DOTS (manual) ── */
+  .dot-chart {
+    position: relative;
+    height: 120px;
+    margin: 8px 0;
+  }
+
+  .dot {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--red);
+    opacity: 0.7;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+
+  .dot:hover { transform: scale(1.4); opacity: 1; z-index: 10; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 40px 0 0;
+    font-size: 11px;
+    color: rgba(122,106,88,0.5);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    margin-top: 48px;
+  }
+
+  /* ── TIMELINE BAR ── */
+  .timeline-wrap { position: relative; }
+
+  .timeline-hours {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .timeline-bars {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 60px;
+  }
+
+  .tb {
+    flex: 1;
+    background: var(--red);
+    border-radius: 3px 3px 0 0;
+    opacity: 0.7;
+    animation: growUp 0.8s ease both;
+    min-height: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .tb:hover { opacity: 1; }
+
+  @keyframes growUp {
+    from { transform: scaleY(0); transform-origin: bottom; }
+    to   { transform: scaleY(1); transform-origin: bottom; }
+  }
+
+  .timeline-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* responsive */
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .kpi-strip { grid-template-columns: 1fr 1fr; }
+    .kpi:first-child { border-radius: 16px 16px 0 0; }
+    .kpi:last-child { border-radius: 0 0 16px 16px; }
+  }
+
+  /* staggered animation delays */
+  .card:nth-child(1){animation-delay:0.05s}
+  .card:nth-child(2){animation-delay:0.1s}
+  .card:nth-child(3){animation-delay:0.15s}
+  .card:nth-child(4){animation-delay:0.2s}
+</style>
 </head>
 <body>
+<div class="container">
 
-    <div class="dashboard-container">
-        
-        <div class="upload-section" id="uploadSection">
-            <h2>📊 นำเข้าข้อมูล CSV</h2>
-            <p>กรุณาเลือกไฟล์ .csv ที่ Export มาจาก Google Sheets เพื่อแสดงผล Dashboard</p>
-            <div class="file-input-wrapper">
-                <input type="file" id="csvFileInput" accept=".csv" />
-            </div>
+  <!-- ══════ HEADER ══════ -->
+  <header>
+    <div>
+      <div class="brand-pill"><div class="brand-dot"></div> KFC Thailand · Survey Report</div>
+      <h1>Consumer<span>Insight</span></h1>
+    </div>
+    <div class="header-meta">
+      <div class="meta-stat"><strong>57</strong> Respondents</div>
+      <div class="meta-stat"><strong>10–12</strong> March 2026</div>
+      <div class="meta-stat" style="margin-top:4px;">Feature Matching Study — Build Your Bucket</div>
+    </div>
+  </header>
+
+  <!-- ══════ KPI STRIP ══════ -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-label">กลุ่มอายุหลัก</div>
+      <div class="kpi-value">84<span>%</span></div>
+      <div class="kpi-sub">18–22 ปี (Gen Z)</div>
+      <div class="kpi-icon">🎓</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">สนใจฟีเจอร์ Match Menu</div>
+      <div class="kpi-value">79<span>%</span></div>
+      <div class="kpi-sub">น่าสนใจมาก + ค่อนข้างน่าสนใจ</div>
+      <div class="kpi-icon">⚡</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">จะลองใช้ถ้ามีในแอป</div>
+      <div class="kpi-value">61<span>%</span></div>
+      <div class="kpi-sub">แน่นอน + อาจจะลอง</div>
+      <div class="kpi-icon">📱</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">เมนูโปรด</div>
+      <div class="kpi-value">67<span>%</span></div>
+      <div class="kpi-sub">ไก่ทอด คือตัวเลือกหลัก</div>
+      <div class="kpi-icon">🍗</div>
+    </div>
+  </div>
+
+  <!-- ══════ SECTION 1 ══════ -->
+  <div class="section-head">
+    <h2>ข้อมูลประชากร</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Age donut -->
+    <div class="card">
+      <div class="card-title">การกระจายตัวตามอายุ</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+          <!-- bg circle -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>
+          <!-- 18-22: 84% = 301.6deg → stroke-dasharray -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#E4002B" stroke-width="16"
+            stroke-dasharray="253.4 48.5" stroke-dashoffset="75.4"
+            style="animation: dashIn 1.2s ease both; transform-origin:center"/>
+          <!-- <18: 5.3% -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#F5A623" stroke-width="16"
+            stroke-dasharray="16 285.9" stroke-dashoffset="-178"
+            style="animation: dashIn 1.2s 0.1s ease both; transform-origin:center"/>
+          <!-- 23-27: 3.5% -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#7A6A58" stroke-width="16"
+            stroke-dasharray="10.5 291.4" stroke-dashoffset="-194"
+            style="animation: dashIn 1.2s 0.2s ease both; transform-origin:center"/>
+          <text x="60" y="55" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="22" fill="white">84%</text>
+          <text x="60" y="70" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#7A6A58">18-22 ปี</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#E4002B"></div>18–22 ปี<span class="legend-pct">48 คน · 84%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#F5A623"></div>ต่ำกว่า 18 ปี<span class="legend-pct">3 คน · 5%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#7A6A58"></div>23–27 ปี<span class="legend-pct">2 คน · 3.5%</span></div>
         </div>
-
-        <div id="dashboardContent">
-            <div class="header">
-                <h1>🍗 KFCDer Insight Dashboard</h1>
-                <p>สรุปผลข้อมูลพฤติกรรมผู้บริโภคแบบเจาะลึกทุกคำถาม</p>
-            </div>
-
-            <div class="summary-cards">
-                <div class="card">
-                    <h3>ผู้ตอบแบบสอบถามทั้งหมด</h3>
-                    <div class="number" id="totalCount">0</div>
-                </div>
-                <div class="card">
-                    <h3>เมนูยอดฮิต</h3>
-                    <div class="number" id="topMenu" style="color: #E4002B;">-</div>
-                </div>
-                <div class="card">
-                    <h3>เพื่อนร่วมโต๊ะยอดฮิต</h3>
-                    <div class="number" id="topCompanion" style="color: #2ecc71;">-</div>
-                </div>
-            </div>
-
-            <div class="section-title">👤 ข้อมูลส่วนตัว</div>
-            <div class="charts-grid">
-                <div class="chart-card"><h3>1. อายุของคุณ</h3><div class="canvas-container"><canvas id="ageChart"></canvas></div></div>
-                <div class="chart-card"><h3>2. สถานะปัจจุบัน</h3><div class="canvas-container"><canvas id="statusChart"></canvas></div></div>
-            </div>
-
-            <div class="section-title">🎯 Insight Question (ฟีเจอร์แอป)</div>
-            <div class="charts-grid">
-                <div class="chart-card"><h3>1. ปกติเลือกเมนูจากอะไรเป็นหลัก</h3><div class="canvas-container"><canvas id="iq1Chart"></canvas></div></div>
-                <div class="chart-card"><h3>2. เมนูที่ชอบที่สุด</h3><div class="canvas-container"><canvas id="iq2Chart"></canvas></div></div>
-                <div class="chart-card"><h3>3. เคยรู้สึกว่าเลือกเมนูยากหรือไม่</h3><div class="canvas-container"><canvas id="iq3Chart"></canvas></div></div>
-                <div class="chart-card"><h3>4. ฟีเจอร์ "จับคู่เมนู" ช่วยให้ง่ายขึ้นไหม</h3><div class="canvas-container"><canvas id="iq4Chart"></canvas></div></div>
-                <div class="chart-card"><h3>5. ไอเดีย Matching สร้าง Bucket น่าสนใจแค่ไหน</h3><div class="canvas-container"><canvas id="iq5Chart"></canvas></div></div>
-                <div class="chart-card"><h3>6. ปัดเลือกเมนูทำให้สั่งสนุกขึ้นไหม</h3><div class="canvas-container"><canvas id="iq6Chart"></canvas></div></div>
-                <div class="chart-card"><h3>7. ถ้ามีฟีเจอร์นี้ จะลองใช้หรือไม่</h3><div class="canvas-container"><canvas id="iq7Chart"></canvas></div></div>
-            </div>
-
-            <div class="section-title">🍗 พฤติกรรมผู้บริโภค</div>
-            <div class="charts-grid">
-                <div class="chart-card"><h3>1. มักไปทาน KFC กับใครบ่อยที่สุด</h3><div class="canvas-container"><canvas id="whoChart"></canvas></div></div>
-                <div class="chart-card"><h3>2. คอนเทนต์ที่ทำให้อยากซื้อ</h3><div class="canvas-container"><canvas id="contentChart"></canvas></div></div>
-                <div class="chart-card"><h3>3. ทาน KFC บ่อยแค่ไหน</h3><div class="canvas-container"><canvas id="cb1Chart"></canvas></div></div>
-                <div class="chart-card"><h3>4. เคยใช้แอป KFC หรือไม่</h3><div class="canvas-container"><canvas id="cb2Chart"></canvas></div></div>
-                <div class="chart-card"><h3>5. ชอบเลือกเมนูเองหรือสั่งตามเซต</h3><div class="canvas-container"><canvas id="cb3Chart"></canvas></div></div>
-                <div class="chart-card"><h3>6. สนใจใช้ฟีเจอร์ช่วยแนะนำเมนูไหม</h3><div class="canvas-container"><canvas id="cb4Chart"></canvas></div></div>
-                <div class="chart-card"><h3>7. มักเพิ่มของทานเล่นหรือไม่</h3><div class="canvas-container"><canvas id="cb5Chart"></canvas></div></div>
-                <div class="chart-card"><h3>8. ชอบเมนูที่เลือกส่วนประกอบเองได้ไหม</h3><div class="canvas-container"><canvas id="cb6Chart"></canvas></div></div>
-                <div class="chart-card"><h3>9. ปกติทำอาหารทานเองบ่อยแค่ไหน</h3><div class="canvas-container"><canvas id="cb9Chart"></canvas></div></div>
-                <div class="chart-card"><h3>10. ยินดีรอคิวร้านที่อยากกินหรือไม่</h3><div class="canvas-container"><canvas id="cb10Chart"></canvas></div></div>
-                <div class="chart-card"><h3>11. ความคิดเห็นเกี่ยวกับ Fast Food</h3><div class="canvas-container"><canvas id="cb11Chart"></canvas></div></div>
-                <div class="chart-card"><h3>12. ทานไก่กี่ชิ้นถึงอิ่ม?</h3><div class="canvas-container"><canvas id="cb12Chart"></canvas></div></div>
-            </div>
-        </div>
-
+      </div>
     </div>
 
-    <script>
-        let chartInstances = []; // เก็บกราฟที่วาดไว้ เพื่อเคลียร์ทิ้งตอนอัปโหลดไฟล์ใหม่
+    <!-- Status bars -->
+    <div class="card">
+      <div class="card-title">สถานะปัจจุบัน</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>นักเรียน / นักศึกษา</span><span class="bar-pct">91%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:91%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>พนักงานบริษัท</span><span class="bar-pct">5%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:5%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ธุรกิจส่วนตัว</span><span class="bar-pct">3.5%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:3.5%"></div></div>
+      </div>
+    </div>
+  </div>
 
-        // Event เมื่อมีการเลือกไฟล์ CSV
-        document.getElementById('csvFileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+  <!-- ══════ SECTION 2: MENU BEHAVIOUR ══════ -->
+  <div class="section-head">
+    <h2>พฤติกรรมการเลือกเมนู</h2>
+    <div class="section-line"></div>
+  </div>
 
-            // ใช้ PapaParse อ่านไฟล์
-            Papa.parse(file, {
-                header: false, // ใช้อ่านตามลำดับคอลัมน์ (Index)
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const data = results.data;
-                    if (data.length <= 1) {
-                        alert('ไฟล์ CSV ไม่มีข้อมูล หรือมีแค่หัวข้อครับ');
-                        return;
-                    }
-                    
-                    // ตัดแถวแรก (Headers) ทิ้ง เอาแต่ข้อมูล
-                    const rows = data.slice(1);
-                    renderDashboard(rows);
-                    
-                    // ซ่อนกล่องอัปโหลด แสดง Dashboard
-                    document.getElementById('uploadSection').style.display = 'none';
-                    document.getElementById('dashboardContent').style.display = 'block';
-                }
-            });
-        });
+  <div class="grid-3">
+    <!-- Menu favourite -->
+    <div class="card">
+      <div class="card-title">เมนูที่ชอบสูงสุด</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>🍗 ไก่ทอด</span><span class="bar-pct">67%</span></div>
+        <div class="bar-track"><div class="bar-fill gradient" style="width:67%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>🍔 เบอร์เกอร์</span><span class="bar-pct">21%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:21%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>🍚 เมนูข้าว</span><span class="bar-pct">12%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:12%"></div></div>
+      </div>
+    </div>
 
-        // ฟังก์ชันช่วยนับจำนวนข้อมูลจากลำดับคอลัมน์ (Index)
-        function getCountsByIndex(rows, columnIndex) {
-            return rows.reduce((acc, curr) => {
-                let val = curr[columnIndex];
-                if (val && val.trim() !== "") {
-                    acc[val] = (acc[val] || 0) + 1;
-                }
-                return acc;
-            }, {});
-        }
+    <!-- Menu selection trigger -->
+    <div class="card">
+      <div class="card-title">สิ่งที่กำหนดการเลือก</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>เมนูที่ชอบอยู่แล้ว</span><span class="bar-pct">47%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:47%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>โปรโมชั่น</span><span class="bar-pct">44%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:44%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ความสะดวก</span><span class="bar-pct">9%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:9%"></div></div>
+      </div>
+    </div>
 
-        // โทนสีหลัก
-        const baseColors = ['#E4002B', '#ff416c', '#2c3e50', '#f39c12', '#7f8c8d', '#3498db'];
+    <!-- Difficulty choosing -->
+    <div class="card">
+      <div class="card-title">ความยากในการเลือก</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>บางครั้ง</span><span class="bar-pct">58%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:58%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ไม่เคย</span><span class="bar-pct">28%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:28%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>บ่อยครั้ง</span><span class="bar-pct">14%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:14%"></div></div>
+      </div>
+    </div>
+  </div>
 
-        // Helper สร้างกราฟ
-        function createChart(canvasId, type, countsObj, colorPalette = baseColors, isHorizontal = false) {
-            const ctx = document.getElementById(canvasId);
-            let options = { maintainAspectRatio: false };
-            
-            if(type === 'bar') {
-                options.plugins = { legend: { display: false } };
-                if(isHorizontal) options.indexAxis = 'y';
-            }
+  <!-- ══════ SECTION 3: FEATURE INSIGHT ══════ -->
+  <div class="section-head">
+    <h2>ฟีเจอร์ Match Menu · Build Your Bucket</h2>
+    <div class="section-line"></div>
+  </div>
 
-            const chart = new Chart(ctx, {
-                type: type,
-                data: {
-                    labels: Object.keys(countsObj),
-                    datasets: [{ 
-                        label: 'จำนวน (คน)', 
-                        data: Object.values(countsObj), 
-                        backgroundColor: colorPalette,
-                        borderRadius: type === 'bar' ? 6 : 0
-                    }]
-                },
-                options: options
-            });
-            
-            chartInstances.push(chart); // เก็บตัวแปรไว้
-            return chart;
-        }
+  <div class="grid-2">
+    <!-- Interest level highlight -->
+    <div class="highlight-card">
+      <div class="card-title" style="color:rgba(255,255,255,0.6)">ระดับความสนใจฟีเจอร์</div>
+      <div style="display:flex; gap:32px; flex-wrap:wrap; margin-top:8px;">
+        <div>
+          <div class="highlight-big">44%</div>
+          <div class="highlight-desc">น่าสนใจมาก<br>(Very Interested)</div>
+        </div>
+        <div>
+          <div class="highlight-big" style="color:var(--gold-light)">35%</div>
+          <div class="highlight-desc">ค่อนข้างน่าสนใจ<br>(Interested)</div>
+        </div>
+      </div>
+      <div style="margin-top:20px; font-size:12px; color:rgba(255,255,255,0.5)">
+        Combined interest rate: <strong style="color:white;">79%</strong> &nbsp;·&nbsp; Negative: 7%
+      </div>
+    </div>
 
-        // ฟังก์ชันหลัก: เรนเดอร์ Dashboard เมื่อได้ข้อมูล
-        function renderDashboard(rows) {
-            // ลบกราฟเก่าทิ้งก่อน (ถ้ามีการอัปโหลดซ้ำ)
-            chartInstances.forEach(chart => chart.destroy());
-            chartInstances = [];
+    <!-- Will use feature? -->
+    <div class="card">
+      <div class="card-title">ถ้ามีฟีเจอร์นี้ในแอป จะลองใช้ไหม?</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>แน่นอน</span><span class="bar-pct">42%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:42%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>อาจจะลอง</span><span class="bar-pct">37%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:37%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ไม่แน่ใจ</span><span class="bar-pct">7%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:7%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ไม่ใช้</span><span class="bar-pct">5%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:5%"></div></div>
+      </div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.07); display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="badge badge-hot"><span class="badge-num">79%</span> Adoption Rate</div>
+        <div class="badge badge-warm"><span class="badge-num">42%</span> Certain Users</div>
+      </div>
+    </div>
+  </div>
 
-            // 1. อัปเดต Scorecards
-            document.getElementById('totalCount').innerText = rows.length;
-            
-            const menuCounts = getCountsByIndex(rows, 4); // คอลัมน์ที่ 5 (iq2)
-            if(Object.keys(menuCounts).length > 0) {
-                document.getElementById('topMenu').innerText = Object.keys(menuCounts).reduce((a, b) => menuCounts[a] > menuCounts[b] ? a : b) + ' 🍗';
-            }
+  <div class="grid-4" style="margin-top:16px;">
+    <!-- Auto-match ease -->
+    <div class="card">
+      <div class="card-title">จับคู่เมนูอัตโนมัติช่วยได้แค่ไหน?</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ง่ายขึ้นมาก</span><span class="bar-pct">60%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:60%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ง่ายขึ้นเล็กน้อย</span><span class="bar-pct">28%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:28%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ไม่ต่าง</span><span class="bar-pct">10%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:10%"></div></div>
+      </div>
+    </div>
 
-            const whoCounts = getCountsByIndex(rows, 10); // คอลัมน์ที่ 11 (cb_who)
-            if(Object.keys(whoCounts).length > 0) {
-                document.getElementById('topCompanion').innerText = Object.keys(whoCounts).reduce((a, b) => whoCounts[a] > whoCounts[b] ? a : b);
-            }
+    <!-- Build Bucket idea -->
+    <div class="card">
+      <div class="card-title">ไอเดีย Build Your Bucket น่าสนใจแค่ไหน?</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>มาก</span><span class="bar-pct">42%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:42%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ปานกลาง</span><span class="bar-pct">44%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:44%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>น้อย</span><span class="bar-pct">5%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:5%"></div></div>
+      </div>
+    </div>
 
-            // ==========================================
-            // วาดกราฟทั้งหมด (อ้างอิงลำดับ Index ตามตาราง CSV ของคุณ)
-            // ==========================================
-            
-            // 1. ข้อมูลส่วนตัว
-            createChart('ageChart', 'pie', getCountsByIndex(rows, 1));     // age
-            createChart('statusChart', 'doughnut', getCountsByIndex(rows, 2)); // status
+    <!-- Gamified ordering -->
+    <div class="card">
+      <div class="card-title">Gamified Ordering สนุกขึ้นไหม?</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ปานกลาง</span><span class="bar-pct">47%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:47%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>มาก</span><span class="bar-pct">42%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:42%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>น้อย</span><span class="bar-pct">5%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:5%"></div></div>
+      </div>
+    </div>
 
-            // 2. Insight Question
-            createChart('iq1Chart', 'bar', getCountsByIndex(rows, 3), ['#E4002B']);
-            createChart('iq2Chart', 'bar', getCountsByIndex(rows, 4), ['#f39c12'], true); 
-            createChart('iq3Chart', 'pie', getCountsByIndex(rows, 5));
-            createChart('iq4Chart', 'doughnut', getCountsByIndex(rows, 6));
-            createChart('iq5Chart', 'bar', getCountsByIndex(rows, 7), ['#ff416c']);
-            createChart('iq6Chart', 'pie', getCountsByIndex(rows, 8));
-            createChart('iq7Chart', 'bar', getCountsByIndex(rows, 9), ['#2c3e50']);
+    <!-- Customise interest -->
+    <div class="card">
+      <div class="card-title">ชอบเมนูที่เลือกส่วนประกอบเองได้?</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ชอบ</span><span class="bar-pct">65%</span></div>
+        <div class="bar-track"><div class="bar-fill gradient" style="width:65%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>เฉยๆ</span><span class="bar-pct">23%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:23%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ไม่ชอบ</span><span class="bar-pct">5%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:5%"></div></div>
+      </div>
+    </div>
+  </div>
 
-            // 3. พฤติกรรมผู้บริโภค
-            
-            // ** ไฮไลต์พิเศษ: สี แฟน vs แฟนเก่า **
-            const whoDataCounts = getCountsByIndex(rows, 10);
-            const whoLabels = Object.keys(whoDataCounts);
-            const whoColors = whoLabels.map(label => {
-                if (label.includes('แฟนเก่า')) return '#7f8c8d'; // สีเทาหม่น
-                if (label.includes('แฟน')) return '#E4002B';     // สีแดงสด
-                if (label.includes('เพื่อน')) return '#f39c12';
-                if (label.includes('ครอบครัว')) return '#3498db';
-                if (label.includes('คนเดียว')) return '#2c3e50';
-                return '#cccccc';
-            });
+  <!-- ══════ SECTION 4: CONSUMER BEHAVIOUR ══════ -->
+  <div class="section-head">
+    <h2>พฤติกรรมผู้บริโภค</h2>
+    <div class="section-line"></div>
+  </div>
 
-            const whoCtx = document.getElementById('whoChart');
-            const whoChart = new Chart(whoCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: whoLabels,
-                    datasets: [{ data: Object.values(whoDataCounts), backgroundColor: whoColors }]
-                },
-                options: { maintainAspectRatio: false, cutout: '50%' }
-            });
-            chartInstances.push(whoChart);
+  <div class="grid-2">
+    <!-- Who they eat with -->
+    <div class="card">
+      <div class="card-title">มักไปทาน KFC กับใคร?</div>
+      <div class="rank-row">
+        <div class="rank-num top">1</div>
+        <div class="rank-name">เพื่อน</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:100%"></div></div>
+        <div class="rank-pct">37%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num top">2</div>
+        <div class="rank-name">คนเดียว</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:76%"></div></div>
+        <div class="rank-pct">28%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num top">3</div>
+        <div class="rank-name">ครอบครัว</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:68%"></div></div>
+        <div class="rank-pct">25%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num">4</div>
+        <div class="rank-name">แฟน</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:40%"></div></div>
+        <div class="rank-pct">15%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num">5</div>
+        <div class="rank-name">แฟนเกา</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:30%"></div></div>
+        <div class="rank-pct">11%</div>
+      </div>
+    </div>
 
-            createChart('contentChart', 'bar', getCountsByIndex(rows, 11), ['#E4002B'], true);
-            createChart('cb1Chart', 'pie', getCountsByIndex(rows, 12));
-            createChart('cb2Chart', 'doughnut', getCountsByIndex(rows, 13), ['#E4002B', '#7f8c8d']);
-            createChart('cb3Chart', 'pie', getCountsByIndex(rows, 14));
-            createChart('cb4Chart', 'bar', getCountsByIndex(rows, 15), ['#2ecc71', '#f39c12', '#e74c3c']);
-            createChart('cb5Chart', 'pie', getCountsByIndex(rows, 16));
-            createChart('cb6Chart', 'doughnut', getCountsByIndex(rows, 17));
-            createChart('cb9Chart', 'bar', getCountsByIndex(rows, 18), ['#E4002B'], true);
-            createChart('cb10Chart', 'bar', getCountsByIndex(rows, 19), ['#2c3e50'], true);
-            createChart('cb11Chart', 'bar', getCountsByIndex(rows, 20), ['#ff416c'], true);
-            createChart('cb12Chart', 'bar', getCountsByIndex(rows, 21), ['#f39c12']);
-        }
-    </script>
+    <!-- Content type -->
+    <div class="card">
+      <div class="card-title">คอนเทนต์แบบไหนทำให้อยากซื้อ KFC มากที่สุด?</div>
+      <div class="rank-row">
+        <div class="rank-num top">1</div>
+        <div class="rank-name">โปรโมชั่นลดราคา</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:100%"></div></div>
+        <div class="rank-pct">65%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num top">2</div>
+        <div class="rank-name">คลิปไวรัล / ตลก</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:15%"></div></div>
+        <div class="rank-pct">10%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num top">3</div>
+        <div class="rank-name">Storytelling</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:15%"></div></div>
+        <div class="rank-pct">10%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num">4</div>
+        <div class="rank-name">อินฟลูเอนเซอร์</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:11%"></div></div>
+        <div class="rank-pct">7%</div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-num">5</div>
+        <div class="rank-name">รีวิวอาหาร</div>
+        <div class="rank-bar-mini"><div class="rank-fill" style="width:6%"></div></div>
+        <div class="rank-pct">4%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:16px;">
+    <!-- Visit frequency -->
+    <div class="card">
+      <div class="card-title">ความถี่ในการทาน KFC</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>นานๆ ครั้ง</span><span class="bar-pct">42%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:42%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>เดือนละ 1–2 ครั้ง</span><span class="bar-pct">42%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:42%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>สัปดาห์ละครั้ง</span><span class="bar-pct">14%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:14%"></div></div>
+      </div>
+    </div>
+
+    <!-- App usage -->
+    <div class="card">
+      <div class="card-title">เคยใช้แอป KFC ไหม?</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>เคยใช้</span><span class="bar-pct">53%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:53%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ไม่เคยใช้</span><span class="bar-pct">47%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:47%"></div></div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="badge badge-hot" style="display:inline-flex;"><span class="badge-num">47%</span>&nbsp; Untapped Users → Feature Adoption Opportunity</div>
+      </div>
+    </div>
+
+    <!-- Ordering style -->
+    <div class="card">
+      <div class="card-title">สไตล์การสั่งอาหาร</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>สั่งเป็นเซต</span><span class="bar-pct">47%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:47%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>แล้วแต่สถานการณ์</span><span class="bar-pct">35%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:35%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>เลือกเอง</span><span class="bar-pct">18%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:18%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SECTION 5: EATING HABITS ══════ -->
+  <div class="section-head">
+    <h2>ข้อมูลเชิงลึก — พฤติกรรมการกิน</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Chicken pieces -->
+    <div class="card">
+      <div class="card-title">ปกติทาน KFC กี่ชิ้นถึงอิ่ม?</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>2 ชิ้น</span><span class="bar-pct">47%</span></div>
+        <div class="bar-track"><div class="bar-fill gradient" style="width:47%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>3 ชิ้น</span><span class="bar-pct">37%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:37%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>4 ชิ้น</span><span class="bar-pct">9%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:9%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>5 ชิ้นขึ้นไป</span><span class="bar-pct">4%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:4%"></div></div>
+      </div>
+      <div style="margin-top:16px; padding:14px; background:rgba(228,0,43,0.08); border-radius:10px; border-left:3px solid var(--red);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;">เฉลี่ย</div>
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--white); line-height:1.1;">2.7 ชิ้น</div>
+        <div style="font-size:11px; color:var(--muted);">sweet spot สำหรับ Bucket Size ที่เหมาะสม</div>
+      </div>
+    </div>
+
+    <!-- Queue & fast food attitude -->
+    <div class="card">
+      <div class="card-title">ทัศนคติต่อการรอคิว</div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ยินดีรอ ถ้าอยากกินจริงๆ</span><span class="bar-pct">46%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:46%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>รอได้ ไม่เกิน 10-15 นาที</span><span class="bar-pct">37%</span></div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:37%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>ไม่ชอบรอคิวเลย</span><span class="bar-pct">10.5%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:10.5%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label-row"><span>เลือกร้านอื่นแทน</span><span class="bar-pct">5%</span></div>
+        <div class="bar-track"><div class="bar-fill muted" style="width:5%"></div></div>
+      </div>
+      <div style="margin-top:16px; padding:14px; background:rgba(245,166,35,0.08); border-radius:10px; border-left:3px solid var(--gold);">
+        <div style="font-size:11px; color:var(--muted);">83% ยินดีรอ — <strong style="color:var(--gold)">Brand Loyalty สูง</strong> และเปิดรับ Pre-Order ผ่านแอป</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ KEY INSIGHTS ══════ -->
+  <div class="section-head">
+    <h2>Key Insights & Recommendations</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card" style="border-left:3px solid var(--red);">
+      <div class="card-title">Insight หลัก</div>
+      <div class="badge-grid">
+        <div class="badge badge-hot">🍗 ไก่ทอด คือ Hero Product (67%)</div>
+        <div class="badge badge-hot">💰 Price-led Content ขับเคลื่อนการซื้อ (65%)</div>
+        <div class="badge badge-warm">👥 เพื่อน = Dining Companion อันดับ 1 (37%)</div>
+        <div class="badge badge-warm">📱 App Non-Users = Growth Opportunity (47%)</div>
+        <div class="badge badge-cool">⏱ 83% ยอมรับ Wait Time — Pre-order แอปมีโอกาส</div>
+        <div class="badge badge-cool">🎯 Gen Z 84% — Digital-First Strategy สำคัญ</div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--gold);">
+      <div class="card-title">คำแนะนำสำหรับ Feature Development</div>
+      <div class="badge-grid">
+        <div class="badge badge-hot">✅ Launch Menu Match Feature — 79% สนใจ</div>
+        <div class="badge badge-warm">🪣 Build Your Bucket — 86% สนใจ (มาก+ปานกลาง)</div>
+        <div class="badge badge-warm">🎮 Gamified Ordering — เพิ่ม Engagement</div>
+        <div class="badge badge-cool">📣 Focus Marketing บน Promotion Content</div>
+        <div class="badge badge-cool">👆 Target: Friends group dining — Social Sharing</div>
+        <div class="badge badge-cool">📦 Default Bucket = 2-3 ชิ้น (ตาม avg 2.7)</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    KFC Thailand · Survey Intelligence Dashboard · 57 Responses · March 2026 · Built by AI Analytics
+  </footer>
+
+</div>
+
+<style>
+  @keyframes dashIn {
+    from { stroke-dashoffset: 302; }
+  }
+</style>
 </body>
 </html>
